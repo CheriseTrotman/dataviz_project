@@ -41,24 +41,29 @@ pets <- read.csv("data/raw_data/seattle_pet_licenses.csv", stringsAsFactors = FA
 ## Explore the Data
 
 ```{r pet-explore, warning=FALSE} 
-## Include code here to explore the data 
-## and answer the questions in the exercise
+## How many pet licenses are included in the dataset?
+glimpse(pets)
+##How many unique pet names are included in the dataset (animal_s_name)
+tabyl(pets$animal_s_name)
+##How many different species are included in this dataset (species)?
+pets %>% group_by(species) %>% summarise(count=n())
+
 ```
 
 ## Visualize the Data
 
-```{r pet-barchart, warning=FALSE} 
+```{r pet-barchart, warning=FALSE}
 ## visual breakdown of how many of each species 
-## are included in the dataset
-ggplot(DATASET) +
-  geom_bar(aes(x=VARIABLE))
+## are included in the data set
+ggplot(pets) +
+  geom_bar(aes(x=species))
 ```
 
 ```{r pet-cat-table, warning=FALSE} 
 ## Table: Most frequent Cat Name 
-DATASET %>% 
-  filter(species == "SPECIES", VARIABLE != "") %>%
-  group_by(VARIABLE) %>% 
+pets %>% 
+  filter(species == "Cat", animal_s_name != "") %>%
+  group_by(animal_s_name) %>% 
   summarise(n = n()) %>% 
   arrange(-n) %>%
   top_n(n = 10) %>%
@@ -67,7 +72,13 @@ DATASET %>%
 
 ```{r pet-dog-table, warning=FALSE} 
 ## Table: Most frequent Dog Name
-## ADD CODE!
+pets %>% 
+  filter(species == "Dog", animal_s_name != "") %>%
+  group_by(animal_s_name) %>% 
+  summarise(n = n()) %>% 
+  arrange(-n) %>%
+  top_n(n = 10) %>%
+  knitr::kable(., caption = "Top 10 Dog Names in Seattle")
 ```
 
 ```{r pet-linechart, warning=FALSE} 
@@ -78,12 +89,12 @@ pets$ym <- as.yearmon(pets$date, "%y%m")
 ## how the number of licenses recorded has changed over time
 pets %>%
   ## group by yearmonth (`ym`)
-  function_name(VARIABLE) %>% 
+  group_by(ym) %>% 
   ## count number within each group
-  function_name(n=n()) %>%
-  ggplot(., aes(VARIABLE, n)) + 
+  summarise(n=n()) %>%
+  ggplot(., aes(ym, n)) + 
   ## geom name for line chart
-  geom_GEOM() +
+  geom_line() +
   scale_x_yearmon() + 
   xlab("") + 
   ylab("Number of licenses")
@@ -110,7 +121,12 @@ steak <- read.csv("data/raw_data/steak-risk-survey.csv", stringsAsFactors = FALS
 ## Explore the Data
 
 ```{r meat-explore, warning=FALSE} 
-## Include code here to explore the data 
+## How many people participated in the survey?
+glimpse(steak)
+##How many people responded “Yes” to the question “Do you eat steak?”
+steak %>% filter(Do.you.eat.steak.=="Yes") %>% summarise(count=n())
+## How many different (unique) responses were there to the question “How do you like your steak prepared?
+steak %>% group_by(How.do.you.like.your.steak.prepared.) %>% summarise(count=n())
 ## and answer the questions in the exercise
 ```
 
@@ -137,7 +153,7 @@ pref <- steak %>%
 ## generate the plot 
 p <- ggplot(pref) +
   ## specify you want to generate a bar chart
-  function_name(aes(x = steak_pref, y = prop, fill = steak_pref),
+  geom_bar(aes(x = steak_pref, y = prop, fill = steak_pref),
                 stat = 'identity', 
                 width = 0.7) + 
   ## this adds text labels (you don't have to change anything here)
@@ -149,32 +165,32 @@ p <- ggplot(pref) +
             size = 5,
             color = "grey40") +
   ## flip coordinates to make horizontal box plot
-  function_name() +
+  coord_flip() +
   ## change the colors of the bars
-  function_name(values = c("#370B01", 
+  scale_color_manual(values = c("#370B01", 
                            "#70402C",
                            "#955732", 
                            "#B36153",
                            "#B5413F")) +
   ## change the scale/labels of the steak-wellness variable (x-axis)
-  function_name(limits = levels(fct_rev(pref$steak_pref)),
+  scale_x_discrete(limits = levels(fct_rev(pref$steak_pref)),
                 labels = c("Well", 
                            "Medium Well" = "Medium-well",
                            "Medium",
                            "Medium rare"="Medium-rare",
                            "Rare")) +
   ## change the scale/lables of the percent axis (y-axis)
-  function_name(labels = scales::percent, 
+  scale_y_discrete(labels = scales::percent, 
                 expand = c(mult = c(0,0), 
                            add = c(0,0.035))) +
   ## change the title, subtitle, and caption
-  function_name(title="'How Do You Like Your Steak Prepared?'", 
+  labs(title="'How Do You Like Your Steak Prepared?'", 
                 subtitle="From a survey of 432 steak-eating Americans",
                 caption="FiveThirtyEight: Surveymonkey") +
   ## change the theme (use ggthemes)
-  function_name() +
+  theme_base() +
   ## fine tune the theme
-  function_name(axis.text = element_text(size = 14), 
+  theme(axis.text = element_text(size = 14), 
                 title = element_text(size = 16), 
                 legend.position="none", 
                 plot.caption=element_text(size = 12), 
@@ -190,19 +206,42 @@ p
 
 ```{r save-plot, warning=FALSE}
 ## save plot to figures/explanatory_figures directory
-ggsave(plot = OBJECT_NAME, filename = FILENAME, width = 8, height = 4)
+ggsave(path = "figures/explanatory_figures", plot=p, filename = "steak_R.png", width =8, height = 4)
 ```
 
 ## Visualize the Data
 
 ```{r meat-plot, warning=FALSE} 
 ### Explore the data -- create your own plot!
-
+p1 <- ggplot(pref) +
+  ## specify you want to generate a bar chart
+  geom_bar(aes(x = steak_pref, y = n, fill = steak_pref),
+                stat = 'identity', 
+                width = 0.7) +
+  ## change the colors of the bars
+  scale_color_manual(values = c("#370B01", 
+                           "#70402C",
+                           "#955732", 
+                           "#B36153",
+                           "#B5413F")) +
+  ## change the scale/labels of the steak-wellness variable (x-axis)
+  scale_x_discrete(limits = levels(fct_rev(pref$steak_pref)),
+                labels = c("Well", 
+                           "Medium Well" = "Medium-well",
+                           "Medium",
+                           "Medium rare"="Medium-rare",
+                           "Rare")) +
+  ## change the title, subtitle, and caption
+  labs(title="'How Do You Like Your Steak Prepared?'", 
+                subtitle="From a survey of 432 steak-eating Americans",
+                caption="FiveThirtyEight: Surveymonkey") +
+  ## change the theme (use ggthemes)
+  theme_base() 
 ```
 
 ## Save this plot 
 
 ```{r save-meat-plot, warning=FALSE}
 ## save plot to figures/explanatory_figures directory
-ggsave(plot = OBJECT_NAME, filename = DIFFERENT_FILENAME)
+ggsave(path = "figures/explanatory_figures", plot = p1, filename = "steak_1.png", width =8, height = 4)
 ```
